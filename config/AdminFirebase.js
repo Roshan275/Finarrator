@@ -3,25 +3,27 @@ const admin = require("firebase-admin");
 const fs = require("fs");
 const path = require("path");
 
+let serviceAccount = null;
+let adminInitialized = false;
+let db = null;
+
 // Load service account credentials
-let serviceAccount;
+function loadServiceAccount() {
+  console.log("🔍 Checking for FIREBASE_SERVICE_ACCOUNT env var...");
 
-// Debug: Log environment variable status
-console.log("🔍 Checking for FIREBASE_SERVICE_ACCOUNT env var...");
-console.log("FIREBASE_SERVICE_ACCOUNT exists:", !!process.env.FIREBASE_SERVICE_ACCOUNT);
-console.log("All ENV keys:", Object.keys(process.env).filter(k => k.includes('FIREBASE') || k.includes('SERVICE')));
-
-// Try to load from environment variable first (for production/Render)
-if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-  console.log("✅ Loading credentials from FIREBASE_SERVICE_ACCOUNT env var");
-  try {
-    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-    console.log("✅ Successfully parsed FIREBASE_SERVICE_ACCOUNT");
-  } catch (error) {
-    console.error("❌ Failed to parse FIREBASE_SERVICE_ACCOUNT:", error.message);
-    process.exit(1);
+  // Try to load from environment variable first (for production/Render)
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    console.log("✅ Loading credentials from FIREBASE_SERVICE_ACCOUNT env var");
+    try {
+      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+      console.log("✅ Successfully parsed FIREBASE_SERVICE_ACCOUNT");
+      return true;
+    } catch (error) {
+      console.error("❌ Failed to parse FIREBASE_SERVICE_ACCOUNT:", error.message);
+      return false;
+    }
   }
-} else {
+
   // Fall back to file (for local development)
   console.log("⚠️  FIREBASE_SERVICE_ACCOUNT not set, attempting to load from file...");
   
@@ -33,39 +35,63 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     "/etc/secrets/serviceAccountKey.json" // Render secret file mount point
   ];
   
-  let loaded = false;
   for (const filePath of possiblePaths) {
     try {
       if (fs.existsSync(filePath)) {
         console.log(`✅ Found credentials at: ${filePath}`);
         serviceAccount = JSON.parse(fs.readFileSync(filePath, 'utf8'));
         console.log("✅ Successfully loaded credentials from file");
-        loaded = true;
-        break;
+        return true;
       }
     } catch (error) {
       console.log(`⚠️  Could not load from ${filePath}: ${error.message}`);
     }
   }
   
-  if (!loaded) {
-    console.error("❌ Could not find Firebase credentials");
-    console.error("   Tried paths:", possiblePaths);
-    console.error("   Please add FIREBASE_SERVICE_ACCOUNT to Render environment variables");
-    console.error("   OR upload serviceAccountKey.json as a secret file");
-    process.exit(1);
+  console.warn("⚠️  Firebase credentials not found - will attempt to load on first use");
+  return false;
+}
+
+// Initialize Firebase Admin SDK (can be called multiple times, only initializes once)
+function initializeFirebase() {
+  if (adminInitialized && db) {
+    return { admin, db };
   }
+
+  // Try to load credentials if not already loaded
+  if (!serviceAccount) {
+    loadServiceAccount();
+  }
+
+  // If we have credentials, initialize
+  if (serviceAccount && !admin.apps.length) {
+    try {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+      db = admin.firestore();
+      adminInitialized = true;
+      console.log("✅ Firebase Admin SDK initialized successfully");
+      return { admin, db };
+    } catch (error) {
+      console.error("❌ Failed to initialize Firebase:", error.message);
+      throw error;
+    }
+  }
+
+  // Return what we have (could be uninitialized)
+  return { admin, db };
 }
 
-// Initialize app if not already initialized
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
+// Try initial load without crashing if not available
+try {
+  loadServiceAccount();
+  if (serviceAccount) {
+    initializeFirebase();
+  }
+} catch (error) {
+  console.warn("⚠️  Firebase will be initialized on first use");
 }
-
-// ✅ Get Firestore instance
-const db = admin.firestore();
 
 // ✅ Correct way to export in CommonJS
-module.exports = { admin, db };
+module.exports = { admin, db, initializeFirebase, loadServiceAccount };
