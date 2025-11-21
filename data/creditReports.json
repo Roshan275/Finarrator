@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cr1",
+    "reportDate": "2024-03-31",
+    "creditScore": 745,
+    "totalAccounts": 4,
+    "openAccounts": 3,
+    "closedAccounts": 1,
+    "totalDebt": 17850,
+    "creditUtilization": 0.32,
+    "paymentHistory": "Good",
+    "derogatoryMarks": 0,
+    "creditAge": 5.3,
+    "hardInquiries": 1,
+    "loanDetails": [
+      {
+        "type": "car loan",
+        "balance": 11850,
+        "monthlyPayment": 650,
+        "interestRate": 6.5,
+        "remainingMonths": 20
+      },
+      {
+        "type": "credit card",
+        "balance": 6000,
+        "monthlyPayment": 300,
+        "interestRate": 18.9,
+        "creditLimit": 15000
+      }
+    ]
+  }
+]

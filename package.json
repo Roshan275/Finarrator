@@ -1,0 +1,40 @@
+{
+  "name": "finarrator-backend",
+  "version": "1.0.0",
+  "description": "Finarrator Financial Dashboard Backend",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["firebase", "auth", "financial"],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "@huggingface/inference": "^4.8.0",
+    "@langchain/community": "^0.3.49",
+    "@langchain/core": "^0.3.66",
+    "@langchain/textsplitters": "^0.1.0",
+    "@pinecone-database/pinecone": "^6.1.2",
+    "@tailwindcss/cli": "^4.1.11",
+    "axios": "^1.12.2",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "firebase-admin": "^12.7.0",
+    "multer": "^2.0.2",
+    "openai": "^5.21.0",
+    "pdf-parse": "^1.1.1",
+    "tailwindcss": "^4.1.11"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

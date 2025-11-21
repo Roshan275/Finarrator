@@ -1,0 +1,68 @@
+[
+  {
+    "id": "nw1",
+    "date": "2024-01-31",
+    "totalAssets": 125000,
+    "totalLiabilities": 18500,
+    "netWorth": 106500,
+    "assetBreakdown": {
+      "cashAndSavings": 25000,
+      "investmentAccounts": 45000,
+      "retirementAccounts": 35000,
+      "realEstate": 20000,
+      "otherAssets": 0
+    },
+    "liabilityBreakdown": {
+      "mortgage": 0,
+      "carLoan": 12500,
+      "creditCard": 6000,
+      "studentLoan": 0,
+      "otherDebt": 0
+    },
+    "monthlyCashFlow": 2850
+  },
+  {
+    "id": "nw2",
+    "date": "2024-02-29",
+    "totalAssets": 128500,
+    "totalLiabilities": 17850,
+    "netWorth": 110650,
+    "assetBreakdown": {
+      "cashAndSavings": 26500,
+      "investmentAccounts": 48000,
+      "retirementAccounts": 36000,
+      "realEstate": 20000,
+      "otherAssets": 0
+    },
+    "liabilityBreakdown": {
+      "mortgage": 0,
+      "carLoan": 11850,
+      "creditCard": 6000,
+      "studentLoan": 0,
+      "otherDebt": 0
+    },
+    "monthlyCashFlow": 2950
+  },
+  {
+    "id": "nw3",
+    "date": "2024-03-31",
+    "totalAssets": 132200,
+    "totalLiabilities": 17200,
+    "netWorth": 115000,
+    "assetBreakdown": {
+      "cashAndSavings": 28200,
+      "investmentAccounts": 51000,
+      "retirementAccounts": 37000,
+      "realEstate": 20000,
+      "otherAssets": 0
+    },
+    "liabilityBreakdown": {
+      "mortgage": 0,
+      "carLoan": 11200,
+      "creditCard": 6000,
+      "studentLoan": 0,
+      "otherDebt": 0
+    },
+    "monthlyCashFlow": 3050
+  }
+]

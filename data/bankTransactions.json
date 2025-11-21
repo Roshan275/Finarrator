@@ -1,0 +1,146 @@
+[
+  {
+    "id": "bt1",
+    "date": "2024-01-15",
+    "description": "Salary Credit",
+    "amount": 8500,
+    "type": "credit",
+    "category": "income"
+  },
+  {
+    "id": "bt2",
+    "date": "2024-01-18",
+    "description": "Rent Payment",
+    "amount": 2200,
+    "type": "debit",
+    "category": "housing"
+  },
+  {
+    "id": "bt3",
+    "date": "2024-01-20",
+    "description": "Grocery Shopping",
+    "amount": 450,
+    "type": "debit",
+    "category": "food"
+  },
+  {
+    "id": "bt4",
+    "date": "2024-01-22",
+    "description": "Utility Bills",
+    "amount": 180,
+    "type": "debit",
+    "category": "utilities"
+  },
+  {
+    "id": "bt5",
+    "date": "2024-01-25",
+    "description": "Investment Transfer",
+    "amount": 1500,
+    "type": "debit",
+    "category": "investment"
+  },
+  {
+    "id": "bt6",
+    "date": "2024-01-28",
+    "description": "Dining Out",
+    "amount": 320,
+    "type": "debit",
+    "category": "food"
+  },
+  {
+    "id": "bt7",
+    "date": "2024-02-15",
+    "description": "Salary Credit",
+    "amount": 8500,
+    "type": "credit",
+    "category": "income"
+  },
+  {
+    "id": "bt8",
+    "date": "2024-02-18",
+    "description": "Rent Payment",
+    "amount": 2200,
+    "type": "debit",
+    "category": "housing"
+  },
+  {
+    "id": "bt9",
+    "date": "2024-02-20",
+    "description": "Car Loan EMI",
+    "amount": 650,
+    "type": "debit",
+    "category": "loan"
+  },
+  {
+    "id": "bt10",
+    "date": "2024-02-22",
+    "description": "Grocery Shopping",
+    "amount": 480,
+    "type": "debit",
+    "category": "food"
+  },
+  {
+    "id": "bt11",
+    "date": "2024-02-25",
+    "description": "Utility Bills",
+    "amount": 190,
+    "type": "debit",
+    "category": "utilities"
+  },
+  {
+    "id": "bt12",
+    "date": "2024-02-28",
+    "description": "Entertainment",
+    "amount": 200,
+    "type": "debit",
+    "category": "entertainment"
+  },
+  {
+    "id": "bt13",
+    "date": "2024-03-15",
+    "description": "Salary Credit",
+    "amount": 8500,
+    "type": "credit",
+    "category": "income"
+  },
+  {
+    "id": "bt14",
+    "date": "2024-03-18",
+    "description": "Rent Payment",
+    "amount": 2200,
+    "type": "debit",
+    "category": "housing"
+  },
+  {
+    "id": "bt15",
+    "date": "2024-03-20",
+    "description": "Car Loan EMI",
+    "amount": 650,
+    "type": "debit",
+    "category": "loan"
+  },
+  {
+    "id": "bt16",
+    "date": "2024-03-22",
+    "description": "Grocery Shopping",
+    "amount": 520,
+    "type": "debit",
+    "category": "food"
+  },
+  {
+    "id": "bt17",
+    "date": "2024-03-25",
+    "description": "Utility Bills",
+    "amount": 210,
+    "type": "debit",
+    "category": "utilities"
+  },
+  {
+    "id": "bt18",
+    "date": "2024-03-28",
+    "description": "Investment Transfer",
+    "amount": 1500,
+    "type": "debit",
+    "category": "investment"
+  }
+]
