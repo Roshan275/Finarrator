@@ -3,6 +3,13 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const cors = require('cors');
 
+// Debug environment variables at startup
+console.log("🚀 Backend Starting...");
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("PORT:", process.env.PORT || 3000);
+console.log("FIREBASE_SERVICE_ACCOUNT present:", !!process.env.FIREBASE_SERVICE_ACCOUNT);
+console.log("---");
+
 const app = express();
 
 // CORS (MUST be before route definitions)

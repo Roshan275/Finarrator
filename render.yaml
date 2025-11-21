@@ -9,10 +9,11 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3000
       - key: FRONTEND_URL
         value: https://your-frontend-domain.vercel.app
       - key: MCP_SERVER_URL
         value: https://financial-mcp-server-production.up.railway.app
-      # Add other API keys in Render dashboard as environment variables
+      # FIREBASE_SERVICE_ACCOUNT must be set in Render Dashboard
+      # (Too large to include in YAML file - add via dashboard environment variables)
+      # Syntax: {"type":"service_account","project_id":"...","private_key":"..."}
+      # PORT is dynamically assigned by Render, no need to hardcode
