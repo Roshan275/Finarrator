@@ -1,8 +1,9 @@
 // Correct import for initialized Firebase Admin instance
-const { admin } = require('../config/AdminFirebase');
+require("dotenv").config();
+const { admin } = require("../config/AdminFirebase");
 
-// API Key for Firebase Authentication REST API
-const FIREBASE_API_KEY = "AIzaSyDxIvVrhN0lwuCuflZGEGRhsUB6G66SdfA";
+// Load Firebase API Key from .env
+const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY;
 
 // Handle user signup
 exports.postSignup = async (req, res) => {

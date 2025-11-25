@@ -20,6 +20,7 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
   'https://frontend1-mu-khaki.vercel.app/',
+  'https://financial-mcp-server-production.up.railway.app/',
   process.env.FRONTEND_URL,
 ].filter(url => url && url !== 'undefined');
 
