@@ -10,7 +10,7 @@ const cors = require('cors');
 console.log("🚀 Backend Starting...");
 console.log("NODE_ENV:", process.env.NODE_ENV);
 console.log("PORT:", process.env.PORT || 3000);
-console.log("FIREBASE_SERVICE_ACCOUNT present:", !!process.env.FIREBASE_SERVICE_ACCOUNT);
+console.log("FIREBASE_SA_BASE64 present:", !!process.env.FIREBASE_SA_BASE64);
 console.log("---");
 
 const app = express();
