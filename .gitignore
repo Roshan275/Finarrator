@@ -79,3 +79,6 @@ secrets.json
 
 # dataconnect generated files
 .dataconnect
+
+uploads/
+
