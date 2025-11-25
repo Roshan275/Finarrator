@@ -1,4 +1,4 @@
-// Load environment variables from .env file (for development and as fallback)
+// index.js
 require('dotenv').config();
 
 const express = require('express');

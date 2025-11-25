@@ -1,4 +1,4 @@
-// Correct import for initialized Firebase Admin instance
+// controllers/authController.js
 require("dotenv").config();
 const { admin } = require("../config/AdminFirebase");
 

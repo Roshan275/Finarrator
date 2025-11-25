@@ -140,93 +140,58 @@ async function fetchQueryEmbedding(text) {
     return fallbackEmbedding;
   }
 }
-// Helper function to add timeout to promises
-function withTimeout(promise, timeoutMs, fallbackValue) {
-  return Promise.race([
-    promise,
-    new Promise((resolve) => setTimeout(() => resolve(fallbackValue), timeoutMs))
-  ]);
-}
-
-// Real-time Google Search with timeout
-async function fetchGoogleSearchResults(query) {
-  const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
-  const cx = process.env.GOOGLE_SEARCH_ENGINE_ID;
-  
-  if (!apiKey || !cx) {
-    console.log("⏭️ Skipping Google Search - not configured");
-    return "Google search not configured.";
-  }
-
-  try {
-    const response = await axios.get("https://www.googleapis.com/customsearch/v1", {
-      params: { key: apiKey, cx, q: query, num: 3},
-      timeout: 3000, // 3 second timeout
-    });
-    const items = response.data.items || [];
-    return items
-      .map((item, idx) => `${idx + 1}. ${item.title}\n${item.snippet}\n${item.link}`)
-      .join("\n\n");
-  } catch (err) {
-    console.warn("⚠️ Google Search failed (non-blocking):", err.message);
-    return "Search results unavailable.";
-  }
-}
-
+// Retrieve relevant docs from Pinecone using embeddings
 // Retrieve relevant docs from Pinecone using embeddings
 async function fetchFromPineconeRAG(userQuery, userId) {
   try {
     console.log(`🔍 Retrieving RAG context for query: "${userQuery.substring(0, 50)}..."`);
     
-    const queryEmbedding = await withTimeout(
-      fetchQueryEmbedding(userQuery),
-      3000,
-      null
-    );
-
+    const queryEmbedding = await fetchQueryEmbedding(userQuery);
     if (!queryEmbedding) {
-      console.log("ℹ️  Embedding generation failed or timed out");
-      return "RAG context unavailable.";
+      console.log("❌ Failed to generate embedding for query");
+      return "No RAG context available.";
     }
 
     console.log(`📐 Query embedding dimension: ${queryEmbedding.length}`);
     
-    const results = await withTimeout(
-      pineconeIndex.query({
-        vector: queryEmbedding,
-        topK: 3, // Reduced from 5 to 3 for speed
-        includeMetadata: true,
-        filter: { docName: { $exists: true } }
-      }),
-      3000,
-      null
-    );
+    const results = await pineconeIndex.query({
+      vector: queryEmbedding,
+      topK: 5,
+      includeMetadata: true,
+      filter: { docName: { $exists: true } }
+    });
 
-    if (!results || !results.matches || results.matches.length === 0) {
+    // DEBUG: See what metadata was stored
+    if (results.matches && results.matches.length > 0) {
+      console.log("📄 Full document text:", results.matches[0].metadata.text);
+    }
+
+    if (!results.matches || results.matches.length === 0) {
       console.log("ℹ️  No relevant documents found in Pinecone");
-      return "No uploaded documents match your query.";
+      return "No relevant information found in documents.";
     }
 
     console.log(`✅ Found ${results.matches.length} relevant document chunks`);
+    console.log("📊 Match scores:", results.matches.map(m => m.score));
     
     // Format the context
     const ragContext = results.matches
-      .filter(match => match.score > -1.0)
+      .filter(match => match.score > -1.0) // Reasonable threshold
       .map((match) => {
         const metadata = match.metadata || {};
-        return `[${(match.score * 100).toFixed(1)}%] ${metadata.text || 'N/A'}`;
+        return `[Relevance: ${(match.score * 100).toFixed(1)}%] ${metadata.text || 'No text content'}`;
       })
       .join("\n\n");
 
-    return ragContext || "No matching documents.";
+    return ragContext || "No highly relevant information found.";
 
   } catch (err) {
-    console.warn("⚠️ Pinecone query failed (non-blocking):", err.message);
-    return "RAG search unavailable.";
+    console.error("❌ Pinecone query error:", err.message);
+    return "Error retrieving information from documents.";
   }
 }
 
-// Fetch all user financial data with timeout
+// Fetch all user financial data
 async function getAllUserData(userId) {
   const collections = [
     "mfTransactions",
@@ -238,31 +203,46 @@ async function getAllUserData(userId) {
   const userData = {};
   const userRef = db.collection("fiMcpData").doc(userId);
 
+  await Promise.all(collections.map(async (collectionName) => {
+    try {
+      const snapshot = await userRef.collection(collectionName).get();
+      if (snapshot.empty) {
+        userData[collectionName] = "No data found";
+        return;
+      }
+      const docs = [];
+      snapshot.forEach((doc) => docs.push({ id: doc.id, ...doc.data() }));
+      userData[collectionName] = docs;
+    } catch (error) {
+      console.error(`❌ Error fetching ${collectionName}:`, error.message);
+      userData[collectionName] = "Error fetching data";
+    }
+  }));
+
+  return JSON.stringify(userData, null, 2);
+}
+
+// Real-time Google Search
+async function fetchGoogleSearchResults(query) {
+  const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
+  const cx = process.env.GOOGLE_SEARCH_ENGINE_ID;
   try {
-    const results = await withTimeout(
-      Promise.all(collections.map(async (collectionName) => {
-        try {
-          const snapshot = await userRef.collection(collectionName).get();
-          const docs = [];
-          snapshot.forEach((doc) => docs.push({ id: doc.id, ...doc.data() }));
-          return { collectionName, docs };
-        } catch (error) {
-          console.warn(`⚠️ Error fetching ${collectionName}:`, error.message);
-          return { collectionName, docs: [] };
-        }
-      })),
-      5000,
-      []
-    );
-
-    results.forEach(({ collectionName, docs }) => {
-      userData[collectionName] = docs.length > 0 ? docs : "No data";
+    const response = await axios.get("https://www.googleapis.com/customsearch/v1", {
+      params: { key: apiKey, cx, q: query, num: 3},
+      timeout: 5000,
     });
+    const items = response.data.items || [];
+    console.log("API:", process.env.GOOGLE_SEARCH_API_KEY);
+    console.log("CX:", process.env.GOOGLE_SEARCH_ENGINE_ID);
 
-    return JSON.stringify(userData, null, 2);
+    console.log(items)
+
+    return items
+      .map((item, idx) => `${idx + 1}. ${item.title}\n${item.snippet}\n${item.link}`)
+      .join("\n\n");
   } catch (err) {
-    console.warn("⚠️ User data fetch timed out or failed (non-blocking):", err.message);
-    return "{}";
+    console.error("❌ Custom Search API error:", err.response?.data || err.message);
+    return "Real-time search failed or not available.";
   }
 }
 
@@ -295,106 +275,101 @@ Clarified User Query (Fully Resolved):`;
 // Chat endpoint: main router
 router.post('/getQuery', async (req, res) => {
   const { message, uid, previousQA = [] } = req.body;
-  
-  console.log("📨 Received chatbot request:", { message: message?.substring(0, 50), uid });
-  
-  if (!message || !uid) {
-    console.error("❌ Missing message or uid:", { message: !!message, uid: !!uid });
-    return res.status(400).json({ reply: "Missing message or uid in request body." });
+  if (!message || !uid) return res.status(400).json({ reply: "Missing message or uid in request body." });
+
+  // Step 1: Clarify message with history if provided
+  let clarifiedMessage = message;
+  try {
+    clarifiedMessage = await clarifyQuery(message, previousQA);
+  } catch (err) {
+    // fallback to raw message if clarification fails
+    clarifiedMessage = message;
   }
 
-  // Check Gemini API key early
-  if (!process.env.GEMINI_API_KEY) {
-    console.error("❌ GEMINI_API_KEY not set");
-    return res.status(500).json({ reply: "Chatbot service not configured." });
+  // Step 2: Detect question category
+  const keyword = detectKeyword(clarifiedMessage);
+  const instruction = keywordInstructions[keyword] || keywordInstructions.general;
+
+  // Step 3: Get all user financial data
+  let fullUserData = {};
+  try {
+    fullUserData = await getAllUserData(uid);
+  } catch (err) {
+    console.error("❌ Error fetching user data:", err.message);
+    return res.status(500).json({ reply: "Error retrieving user financial data." });
   }
+
+  // Step 4: Data extraction by Gemini - relevant user data
+  const sanitizedMessage = clarifiedMessage.replace(/\s+/g, " ").trim();
+  const dataExtractionPrompt = [
+    "You are a financial data filter.",
+    "Given the user's financial data and a question, respond ONLY with the data relevant to the question in STRICT JSON format.",
+    "Avoid commentary, summaries, or explanations.",
+    `User Query: ${sanitizedMessage}`,
+    `User Financial Data: ${fullUserData}`
+  ].join("\n");
+
+  let relevantUserDataJSON = "{}";
+  try {
+    const dataFilterResponse = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      { contents: [{ parts: [{ text: dataExtractionPrompt }] }] },
+      { timeout: 800000 }
+    );
+    relevantUserDataJSON =
+      dataFilterResponse.data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "{}";
+  } catch (err) {
+    console.error("❌ Data filtering error:", err.response?.data || err.message);
+  }
+
+  // Step 5: RAG context via Pinecone search
+  const pineconeRAGContext = await fetchFromPineconeRAG(clarifiedMessage, uid);
+
+  // Step 6: Real-time Google search
+  const searchResults = await fetchGoogleSearchResults(message);
+
+  // Step 7: Format conversation history
+  const formattedHistory = previousQA
+    .slice(-MAX_HISTORY_LENGTH)
+    .map((pair, i) => `Q${i + 1}: ${pair.question}\nA${i + 1}: ${pair.answer}`)
+    .join("\n\n");
+
+  // Step 8: Build final prompt for Gemini
+  const finalPrompt = [
+    "You are a smart financial assistant.",
+    "Start by strictly analyzing the user-uploaded file content below before using external search results.",
+    "Prefer file-based answers over Google unless the answer is clearly not found.",
+    "",
+    `Instruction:\n${instruction}`,
+    "",
+    "User Uploaded File Content:",
+    pineconeRAGContext,
+    "",
+    "User Financial Data:",
+    fullUserData,
+    "",
+    "Real-time Search Results:",
+    searchResults,
+    "Based on user query use the real-time search results if data is not found in user financial data or uploaded files.",
+    "",
+    `User Question:\n${sanitizedMessage}`,
+    "",
+    "Previous Conversation History (optional, use only when relevant):",
+    formattedHistory
+  ].join("\n");
 
   try {
-    console.time("⏱️ Total chatbot response time");
-    
-    // Step 1: Detect keyword (instant)
-    const keyword = detectKeyword(message);
-    const instruction = keywordInstructions[keyword] || keywordInstructions.general;
-    console.log(`🔑 Keyword: ${keyword}`);
-
-    // Step 2: Quick fetch with SHORT timeouts (non-blocking)
-    console.log("⚡ Fetching context in parallel with timeouts...");
-    const [fullUserData, pineconeRAGContext, searchResults] = await Promise.all([
-      // Firestore data (5s timeout)
-      withTimeout(getAllUserData(uid), 5000, "{}"),
-      // Pinecone RAG (3s timeout)
-      withTimeout(fetchFromPineconeRAG(message, uid), 3000, "No documents available."),
-      // Google Search (3s timeout)
-      withTimeout(fetchGoogleSearchResults(message), 3000, "Search unavailable.")
-    ]);
-
-    console.log("✅ All data sources completed");
-
-    // Step 3: Build simple prompt
-    const finalPrompt = [
-      `You are a financial assistant. Answer concisely (2-3 sentences).`,
-      `Topic: ${instruction}`,
-      `User Files: ${pineconeRAGContext.substring(0, 300)}`,
-      `User Data: ${fullUserData.substring(0, 300)}`,
-      `Web Results: ${searchResults.substring(0, 200)}`,
-      `Question: ${message}`
-    ].join("\n\n");
-
-    // Step 4: Call Gemini with strict 5s timeout
-    console.log("🤖 Calling Gemini API...");
-    let response;
-    
-    try {
-      // Try gemini-pro first (most reliable)
-      response = await withTimeout(
-        axios.post(
-          `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
-          { contents: [{ parts: [{ text: finalPrompt }] }] },
-          { timeout: 8000 }
-        ),
-        10000,
-        null
-      );
-    } catch (err) {
-      console.warn("⚠️ gemini-pro failed, trying gemini-1.5-pro...");
-      try {
-        response = await withTimeout(
-          axios.post(
-            `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
-            { contents: [{ parts: [{ text: finalPrompt }] }] },
-            { timeout: 8000 }
-          ),
-          10000,
-          null
-        );
-      } catch (err2) {
-        console.error("❌ Both models failed:", err2.response?.status, err2.response?.data?.error?.message);
-        throw err2;
-      }
-    }
-
-    if (!response) {
-      console.warn("⚠️ Gemini timeout - using fallback response");
-      const fallbackReply = `Based on your question about ${keyword}, I found: ${pineconeRAGContext.substring(0, 300)}`;
-      return res.json({ reply: fallbackReply });
-    }
-
-    const reply = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || "Unable to generate response.";
-    console.timeEnd("⏱️ Total chatbot response time");
-    res.json({ reply: reply.trim() });
-    
+    const finalGeminiResponse = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      { contents: [{ parts: [{ text: finalPrompt }] }] },
+      { timeout: 15000 }
+    );
+    let reply = finalGeminiResponse.data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, no reply generated.";
+    reply = reply.trim();
+    res.json({ reply });
   } catch (err) {
-    console.error("❌ Chatbot Error:", {
-      message: err.message,
-      status: err.response?.status,
-      statusText: err.response?.statusText,
-      apiError: err.response?.data?.error?.message
-    });
-    
-    // Fallback response if Gemini fails
-    res.status(500).json({ 
-      reply: "I'm experiencing technical difficulties. Please try again in a moment." 
-    });
+    console.error("❌ Final Gemini response error:", err.response?.data || err.message);
+    res.status(500).json({ reply: "Something went wrong while generating the response." });
   }
 });
 
